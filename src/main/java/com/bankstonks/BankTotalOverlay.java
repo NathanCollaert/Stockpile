@@ -1,4 +1,4 @@
-package com.stockpile;
+package com.bankstonks;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -18,13 +18,13 @@ import net.runelite.client.ui.overlay.components.TitleComponent;
 public class BankTotalOverlay extends OverlayPanel
 {
 	private final PortfolioManager manager;
-	private final StockpileConfig config;
+	private final BankStonksConfig config;
 
 	@Setter
 	private boolean bankOpen;
 
 	@Inject
-	public BankTotalOverlay(PortfolioManager manager, StockpileConfig config)
+	public BankTotalOverlay(PortfolioManager manager, BankStonksConfig config)
 	{
 		this.manager = manager;
 		this.config = config;

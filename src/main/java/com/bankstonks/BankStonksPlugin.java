@@ -1,8 +1,8 @@
-package com.stockpile;
+package com.bankstonks;
 
-import com.stockpile.model.PortfolioRow;
-import com.stockpile.ui.StockpilePanel;
-import com.stockpile.ui.PortfolioActions;
+import com.bankstonks.model.PortfolioRow;
+import com.bankstonks.ui.BankStonksPanel;
+import com.bankstonks.ui.PortfolioActions;
 import com.google.inject.Provides;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -34,11 +34,11 @@ import net.runelite.http.api.item.ItemPrice;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Stockpile",
+	name = "Bank Stonks",
 	description = "Tracks GE buys and shows live profit/loss vs the wiki price for what you hold",
-	tags = {"grand", "exchange", "ge", "profit", "loss", "portfolio", "stockpile", "flip", "price", "bank"}
+	tags = {"grand", "exchange", "ge", "profit", "loss", "portfolio", "stonks", "flip", "price", "bank"}
 )
-public class StockpilePlugin extends Plugin implements PortfolioActions
+public class BankStonksPlugin extends Plugin implements PortfolioActions
 {
 	/** The bank interface widget group id. */
 	private static final int BANK_GROUP_ID = 12;
@@ -52,7 +52,7 @@ public class StockpilePlugin extends Plugin implements PortfolioActions
 	@Inject
 	private ClientToolbar clientToolbar;
 	@Inject
-	private StockpileConfig config;
+	private BankStonksConfig config;
 	@Inject
 	private ConfigManager configManager;
 	@Inject
@@ -68,23 +68,23 @@ public class StockpilePlugin extends Plugin implements PortfolioActions
 	@Inject
 	private BankTotalOverlay bankTotalOverlay;
 
-	private StockpilePanel panel;
+	private BankStonksPanel panel;
 	private NavigationButton navButton;
 
 	@Provides
-	StockpileConfig provideConfig(ConfigManager configManager)
+	BankStonksConfig provideConfig(ConfigManager configManager)
 	{
-		return configManager.getConfig(StockpileConfig.class);
+		return configManager.getConfig(BankStonksConfig.class);
 	}
 
 	@Override
 	protected void startUp() throws Exception
 	{
-		panel = new StockpilePanel(itemManager, config, this);
+		panel = new BankStonksPanel(itemManager, config, this);
 
 		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "/nav_button.png");
 		navButton = NavigationButton.builder()
-			.tooltip("Stockpile")
+			.tooltip("Bank Stonks")
 			.icon(icon)
 			.priority(7)
 			.panel(panel)
@@ -160,7 +160,7 @@ public class StockpilePlugin extends Plugin implements PortfolioActions
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (StockpileConfig.GROUP.equals(event.getGroup()))
+		if (BankStonksConfig.GROUP.equals(event.getGroup()))
 		{
 			refresh();
 		}
@@ -218,7 +218,7 @@ public class StockpilePlugin extends Plugin implements PortfolioActions
 
 			String name = itemManager.getItemComposition(itemId).getName();
 			// Adding an item you want tracked implicitly unblocks it.
-			configManager.setConfiguration(StockpileConfig.GROUP, StockpileConfig.KEY_BLOCK_LIST, BlockLists.remove(config.blockList(), name));
+			configManager.setConfiguration(BankStonksConfig.GROUP, BankStonksConfig.KEY_BLOCK_LIST, BlockLists.remove(config.blockList(), name));
 			manager.recordBuy(itemId, quantity, priceEach * quantity, heldSinceEpochMs);
 			manager.save();
 			panel.setStatus("Added " + quantity + " x " + name + ".", Color.LIGHT_GRAY);
@@ -240,7 +240,7 @@ public class StockpilePlugin extends Plugin implements PortfolioActions
 	@Override
 	public void blockItem(String itemName)
 	{
-		configManager.setConfiguration(StockpileConfig.GROUP, StockpileConfig.KEY_BLOCK_LIST, BlockLists.add(config.blockList(), itemName));
+		configManager.setConfiguration(BankStonksConfig.GROUP, BankStonksConfig.KEY_BLOCK_LIST, BlockLists.add(config.blockList(), itemName));
 		refresh();
 	}
 

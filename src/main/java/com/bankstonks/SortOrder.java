@@ -1,4 +1,4 @@
-package com.stockpile;
+package com.bankstonks;
 
 /**
  * How the sidebar list is ordered.

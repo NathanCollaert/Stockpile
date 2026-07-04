@@ -1,4 +1,4 @@
-package com.stockpile.ui;
+package com.bankstonks.ui;
 
 /**
  * Callbacks the panel uses to ask the plugin to mutate portfolio state. The plugin performs

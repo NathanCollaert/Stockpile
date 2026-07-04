@@ -1,4 +1,4 @@
-package com.stockpile;
+package com.bankstonks;
 
 import java.awt.Color;
 import net.runelite.client.config.Alpha;
@@ -6,10 +6,10 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
-@ConfigGroup(StockpileConfig.GROUP)
-public interface StockpileConfig extends Config
+@ConfigGroup(BankStonksConfig.GROUP)
+public interface BankStonksConfig extends Config
 {
-	String GROUP = "stockpile";
+	String GROUP = "bankstonks";
 	String KEY_BLOCK_LIST = "blockList";
 
 	@ConfigItem(

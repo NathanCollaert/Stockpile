@@ -1,9 +1,9 @@
-package com.stockpile;
+package com.bankstonks;
 
-import com.stockpile.model.PortfolioData;
-import com.stockpile.model.PortfolioRow;
-import com.stockpile.model.SlotState;
-import com.stockpile.model.TrackedItem;
+import com.bankstonks.model.PortfolioData;
+import com.bankstonks.model.PortfolioRow;
+import com.bankstonks.model.SlotState;
+import com.bankstonks.model.TrackedItem;
 import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -30,7 +30,7 @@ import net.runelite.client.game.ItemVariationMapping;
 @Singleton
 public class PortfolioManager
 {
-	static final String CONFIG_GROUP = "stockpile";
+	static final String CONFIG_GROUP = "bankstonks";
 	private static final String DATA_KEY_PREFIX = "data_";
 
 	private final ConfigManager configManager;
@@ -192,7 +192,7 @@ public class PortfolioManager
 	 * Whether an item is on the untracked list and should be excluded. Supports {@code *}
 	 * wildcards. Single source of truth used by the panel, buy tracker and bank overlay.
 	 */
-	public static boolean isBlocked(StockpileConfig config, String itemName)
+	public static boolean isBlocked(BankStonksConfig config, String itemName)
 	{
 		return BlockLists.matches(config.blockList(), itemName);
 	}
@@ -236,7 +236,7 @@ public class PortfolioManager
 	 *
 	 * <p>Must be called on the client thread (uses {@link ItemManager}).</p>
 	 */
-	public List<PortfolioRow> buildRows(ItemManager itemManager, StockpileConfig config)
+	public List<PortfolioRow> buildRows(ItemManager itemManager, BankStonksConfig config)
 	{
 		// Total bank quantity grouped by variation base, so a charged/banked item counts
 		// towards the uncharged item it was bought as (and dose variants collapse together).

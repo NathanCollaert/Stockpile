@@ -1,8 +1,8 @@
-package com.stockpile.ui;
+package com.bankstonks.ui;
 
-import com.stockpile.Format;
-import com.stockpile.StockpileConfig;
-import com.stockpile.model.PortfolioRow;
+import com.bankstonks.Format;
+import com.bankstonks.BankStonksConfig;
+import com.bankstonks.model.PortfolioRow;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -43,10 +43,10 @@ import net.runelite.client.util.AsyncBufferedImage;
  * Sidebar panel: manual-add form, search filter, total P/L header, the held-item list and a
  * collapsible block list.
  */
-public class StockpilePanel extends PluginPanel
+public class BankStonksPanel extends PluginPanel
 {
 	private final ItemManager itemManager;
-	private final StockpileConfig config;
+	private final BankStonksConfig config;
 	private final PortfolioActions actions;
 
 	private final JLabel totalLabel = new JLabel("0", SwingConstants.CENTER);
@@ -69,7 +69,7 @@ public class StockpilePanel extends PluginPanel
 
 	private List<PortfolioRow> allRows = new ArrayList<>();
 
-	public StockpilePanel(ItemManager itemManager, StockpileConfig config, PortfolioActions actions)
+	public BankStonksPanel(ItemManager itemManager, BankStonksConfig config, PortfolioActions actions)
 	{
 		this.itemManager = itemManager;
 		this.config = config;
@@ -111,7 +111,7 @@ public class StockpilePanel extends PluginPanel
 		header.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		header.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-		JLabel title = new JLabel("Stockpile profit / loss", SwingConstants.CENTER);
+		JLabel title = new JLabel("Bank Stonks profit / loss", SwingConstants.CENTER);
 		title.setFont(FontManager.getRunescapeSmallFont());
 		title.setForeground(Color.LIGHT_GRAY);
 

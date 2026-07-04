@@ -26,10 +26,10 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'com.stockpile'
+group = 'com.bankstonks'
 version = '1.0-SNAPSHOT'
 
-def pluginMainClass = 'com.stockpile.StockpilePluginTest'
+def pluginMainClass = 'com.bankstonks.BankStonksPluginTest'
 
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'

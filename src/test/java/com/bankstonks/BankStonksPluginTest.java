@@ -1,13 +1,13 @@
-package com.stockpile;
+package com.bankstonks;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
-public class StockpilePluginTest
+public class BankStonksPluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(StockpilePlugin.class);
+		ExternalPluginManager.loadBuiltin(BankStonksPlugin.class);
 		RuneLite.main(args);
 	}
 }

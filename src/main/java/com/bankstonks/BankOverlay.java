@@ -1,6 +1,6 @@
-package com.stockpile;
+package com.bankstonks;
 
-import com.stockpile.model.TrackedItem;
+import com.bankstonks.model.TrackedItem;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import javax.inject.Inject;
@@ -25,11 +25,11 @@ public class BankOverlay extends WidgetItemOverlay
 	private final PortfolioManager manager;
 	private final ItemManager itemManager;
 	private final TooltipManager tooltipManager;
-	private final StockpileConfig config;
+	private final BankStonksConfig config;
 
 	@Inject
 	public BankOverlay(Client client, PortfolioManager manager, ItemManager itemManager,
-		TooltipManager tooltipManager, StockpileConfig config)
+		TooltipManager tooltipManager, BankStonksConfig config)
 	{
 		this.client = client;
 		this.manager = manager;

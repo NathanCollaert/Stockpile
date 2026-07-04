@@ -1,4 +1,4 @@
-package com.stockpile.model;
+package com.bankstonks.model;
 
 import lombok.Value;
 

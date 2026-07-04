@@ -1,4 +1,4 @@
-package com.stockpile;
+package com.bankstonks;
 
 /**
  * Shared number/age formatting used by the panel and overlays.

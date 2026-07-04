@@ -1,4 +1,4 @@
-package com.stockpile;
+package com.bankstonks;
 
 import java.util.HashMap;
 import java.util.Map;
