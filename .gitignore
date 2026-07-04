@@ -1,16 +1,18 @@
-# Compiled class file
+# Gradle
+.gradle/
+build/
+
+# Compiled output
 *.class
+out/
+bin/
 
-# Log file
+# Logs & JVM crash dumps
 *.log
+hs_err_pid*
+replay_pid*
 
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
+# Packaged archives (but keep the Gradle wrapper jar)
 *.jar
 *.war
 *.nar
@@ -18,7 +20,32 @@
 *.zip
 *.tar.gz
 *.rar
+!gradle/wrapper/gradle-wrapper.jar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# VS Code
+.vscode/
+
+# NetBeans
+nbactions.xml
+nb-configuration.xml
+nbproject/
+
+# Misc
+local.properties
+*.ctxt
+.mtj.tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
