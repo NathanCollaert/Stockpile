@@ -18,6 +18,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GrandExchangeOfferChanged;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.WidgetLoaded;
@@ -110,11 +111,24 @@ public class BankStonksPlugin extends Plugin implements PortfolioActions
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		if (event.getGameState() == GameState.LOGGED_IN)
+		GameState state = event.getGameState();
+		if (state == GameState.LOGGING_IN || state == GameState.HOPPING)
+		{
+			// The client is about to replay all existing GE offers; don't re-record them.
+			buyTracker.setLoginSync(true);
+		}
+		if (state == GameState.LOGGED_IN)
 		{
 			manager.setAccount(client.getAccountHash());
 			refresh();
 		}
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick event)
+	{
+		// The login/hop offer replay all fires before the first tick, so the sync window is over.
+		buyTracker.setLoginSync(false);
 	}
 
 	@Subscribe

@@ -25,10 +25,23 @@ public class GrandExchangeBuyTracker
 {
 	private final PortfolioManager manager;
 
+	/**
+	 * True while the client is replaying the batch of existing GE offers that fires on login/hop.
+	 * During this window an offer we have no baseline for was bought in a previous session (and
+	 * recorded then), so we adopt it as the baseline instead of recording it again.
+	 */
+	private volatile boolean loginSync;
+
 	@Inject
 	public GrandExchangeBuyTracker(PortfolioManager manager)
 	{
 		this.manager = manager;
+	}
+
+	/** Marks the start of the login/hop offer replay (set true), or its end (set false). */
+	public void setLoginSync(boolean syncing)
+	{
+		this.loginSync = syncing;
 	}
 
 	/** @return true if a buy was recorded (so the caller can refresh the UI). */
@@ -45,17 +58,26 @@ public class GrandExchangeBuyTracker
 
 		if (state == GrandExchangeOfferState.EMPTY)
 		{
-			manager.clearSlot(slot);
-			manager.save();
+			// On login the client resets every slot to EMPTY before replaying the real offers.
+			// Clearing here would drop the baseline (and the offer's lot identity), so a later
+			// fill would start a new lot. Skip clearing during the login/hop replay window.
+			if (!loginSync)
+			{
+				manager.clearSlot(slot);
+				manager.save();
+			}
 			return false;
 		}
 
 		if (!isBuy(state))
 		{
 			// Sell offers do not affect cost basis; forget the slot so a later buy in the
-			// same slot starts from a clean delta.
-			manager.clearSlot(slot);
-			manager.save();
+			// same slot starts from a clean delta (but not during the login replay, as above).
+			if (!loginSync)
+			{
+				manager.clearSlot(slot);
+				manager.save();
+			}
 			return false;
 		}
 
@@ -77,13 +99,23 @@ public class GrandExchangeBuyTracker
 		boolean recorded = false;
 		if (deltaQty > 0 && deltaSpent > 0)
 		{
-			if (offerId == 0)
+			if (loginSync && !continuing)
 			{
-				offerId = manager.nextOfferId();
+				// Login/hop replay of an offer we have no baseline for: it was bought (and
+				// recorded) in a prior session. Adopt it as the baseline without recording, so the
+				// same buy is never counted twice. A later real fill diffs against this baseline.
+				log.debug("login sync: adopting baseline item={} qty={} spent={} (not recorded)", itemId, quantitySold, spent);
 			}
-			manager.recordOfferFill(itemId, deltaQty, deltaSpent, System.currentTimeMillis(), offerId);
-			recorded = true;
-			log.debug("recorded buy fill: item={} qty={} spent={} offer={}", itemId, deltaQty, deltaSpent, offerId);
+			else
+			{
+				if (offerId == 0)
+				{
+					offerId = manager.nextOfferId();
+				}
+				manager.recordOfferFill(itemId, deltaQty, deltaSpent, System.currentTimeMillis(), offerId);
+				recorded = true;
+				log.debug("recorded buy fill: item={} qty={} spent={} offer={}", itemId, deltaQty, deltaSpent, offerId);
+			}
 		}
 
 		manager.setSlot(slot, new SlotState(itemId, quantitySold, spent, offerId));
