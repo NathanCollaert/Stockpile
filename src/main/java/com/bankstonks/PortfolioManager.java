@@ -334,6 +334,41 @@ public class PortfolioManager
 		return rows;
 	}
 
+	/**
+	 * Builds rows from the built-in demo portfolio, valuing one of each sample item at the live
+	 * price regardless of what you hold. Reads and writes nothing on disk, so your real tracked
+	 * data is untouched. Must be called on the client thread (uses {@link ItemManager}).
+	 */
+	public List<PortfolioRow> buildDemoRows(ItemManager itemManager, BankStonksConfig config)
+	{
+		List<PortfolioRow> rows = new ArrayList<>();
+		long total = 0;
+		for (DemoData.Entry e : DemoData.ITEMS)
+		{
+			TrackedItem tracked = new TrackedItem();
+			tracked.addBuy(1, e.spent, e.epochMs);
+
+			int quantity = tracked.totalBought();
+			LotValuation valuation = tracked.value(quantity);
+			long avg = valuation.getAveragePrice();
+			int rawCurrent = itemManager.getItemPrice(e.priceId);
+			long effectiveCurrent = config.applyGeTax() ? netAfterTax(rawCurrent) : rawCurrent;
+			long profitEach = effectiveCurrent - avg;
+			long profitTotal = profitEach * quantity;
+
+			String name = itemManager.getItemComposition(e.itemId).getName();
+			List<Lot> lots = new ArrayList<>(tracked.getLots());
+			lots.sort(Comparator.comparingLong(Lot::getEpochMs).reversed());
+
+			total += profitTotal;
+			rows.add(new PortfolioRow(e.itemId, name, quantity, avg, rawCurrent, profitEach, profitTotal, valuation.getHeldSinceEpochMs(), lots));
+		}
+
+		sort(rows, config.sortOrder());
+		lastTotalProfit = total;
+		return rows;
+	}
+
 	private static void sort(List<PortfolioRow> rows, SortOrder order)
 	{
 		final Comparator<PortfolioRow> comparator;

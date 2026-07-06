@@ -170,6 +170,13 @@ public class BankStonksPlugin extends Plugin implements PortfolioActions
 		}
 		clientThread.invokeLater(() ->
 		{
+			// Demo mode renders a built-in sample portfolio and never touches real account data.
+			if (config.demoMode() && client.getGameState() == GameState.LOGGED_IN)
+			{
+				panel.update(manager.buildDemoRows(itemManager, config), manager.getLastTotalProfit());
+				return;
+			}
+
 			if (client.getGameState() == GameState.LOGGED_IN)
 			{
 				manager.setAccount(client.getAccountHash());

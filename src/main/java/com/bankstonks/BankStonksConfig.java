@@ -41,6 +41,26 @@ public interface BankStonksConfig extends Config
 	)
 	String SECTION_BLOCK_LIST = "blockListSection";
 
+	@ConfigSection(
+		name = "Showcase",
+		description = "A demonstration mode for showing the plugin off.",
+		position = 4,
+		closedByDefault = true
+	)
+	String SECTION_SHOWCASE = "showcase";
+
+	@ConfigItem(
+		keyName = "demoMode",
+		name = "Demo mode",
+		description = "Show a sample end-game portfolio (bought once, real historical prices) valued at the live price. Purely for demonstration: it does not read or change your real tracked data, and the items don't need to be in your bank.",
+		section = SECTION_SHOWCASE,
+		position = 1
+	)
+	default boolean demoMode()
+	{
+		return false;
+	}
+
 	@ConfigItem(
 		keyName = "showPercent",
 		name = "Show profit %",
