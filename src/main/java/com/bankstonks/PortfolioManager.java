@@ -8,15 +8,19 @@ import com.bankstonks.model.SlotState;
 import com.bankstonks.model.TrackedItem;
 import com.google.gson.Gson;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.game.ItemMapping;
 import net.runelite.client.game.ItemVariationMapping;
 
 /**
@@ -198,9 +202,70 @@ public class PortfolioManager
 	}
 
 	/**
+	 * The tradeable "base" item ids a held item counts towards. Uses RuneLite's {@link ItemMapping}
+	 * (the same data {@link ItemManager#getItemPrice} sums) so a combination item resolves to the
+	 * tradeable parts it was assembled from (e.g. an avernic defender counts as its hilt), then
+	 * normalises through {@link ItemVariationMapping} for charged/dose variants.
+	 *
+	 * <p>Only single-quantity components are followed, so assembled parts (hilts, shards, ornament
+	 * kits) count but consumed bulk charges (scales, darts) do not resurrect as "held".</p>
+	 */
+	/** Adds a held item's quantity to every tradeable base it counts towards. */
+	private static void addHeld(Map<Integer, Integer> heldByBase, int itemId, int quantity)
+	{
+		for (int base : representedBases(itemId))
+		{
+			heldByBase.merge(base, quantity, Integer::sum);
+		}
+	}
+
+	/**
+	 * Assembled items that RuneLite has no price for and does not model in {@link ItemMapping}
+	 * (the finished item is untradeable), mapped to the tradeable component you actually bought.
+	 * Lets a held avernic defender count as its hilt, etc. Hand maintained; add entries as needed.
+	 */
+	private static final Map<Integer, int[]> ASSEMBLED_COMPONENTS = new HashMap<>();
+
+	static
+	{
+		// Others (amulet of blood fury, ferocious gloves, etc.) are already resolved by ItemMapping.
+		ASSEMBLED_COMPONENTS.put(22322, new int[]{22477}); // Avernic defender -> Avernic defender hilt
+	}
+
+	private static Set<Integer> representedBases(int itemId)
+	{
+		Set<Integer> bases = new HashSet<>();
+		int[] manual = ASSEMBLED_COMPONENTS.get(itemId);
+		if (manual != null)
+		{
+			for (int component : manual)
+			{
+				bases.add(ItemVariationMapping.map(component));
+			}
+			return bases;
+		}
+		Collection<ItemMapping> mappings = ItemMapping.map(itemId);
+		if (mappings != null)
+		{
+			for (ItemMapping mapping : mappings)
+			{
+				if (mapping.getQuantity() == 1)
+				{
+					bases.add(ItemVariationMapping.map(mapping.getTradeableItem()));
+				}
+			}
+		}
+		if (bases.isEmpty())
+		{
+			bases.add(ItemVariationMapping.map(itemId));
+		}
+		return bases;
+	}
+
+	/**
 	 * Finds the tracked (bought) item id that corresponds to an item sitting in the bank,
-	 * matching across variations so a charged/banked item resolves to the uncharged item it
-	 * was bought as. Returns -1 if nothing tracked corresponds.
+	 * matching across variations and combination items so a charged, banked or assembled item
+	 * resolves to the item it was bought as. Returns -1 if nothing tracked corresponds.
 	 */
 	public int boughtIdForBankItem(int bankItemId)
 	{
@@ -208,10 +273,10 @@ public class PortfolioManager
 		{
 			return bankItemId;
 		}
-		int base = ItemVariationMapping.map(bankItemId);
+		Set<Integer> bases = representedBases(bankItemId);
 		for (Integer id : data.getItems().keySet())
 		{
-			if (ItemVariationMapping.map(id) == base)
+			if (bases.contains(ItemVariationMapping.map(id)))
 			{
 				return id;
 			}
@@ -278,13 +343,13 @@ public class PortfolioManager
 		Map<Integer, Integer> heldByBase = new HashMap<>();
 		for (Map.Entry<Integer, Integer> e : data.getBank().entrySet())
 		{
-			heldByBase.merge(ItemVariationMapping.map(e.getKey()), e.getValue(), Integer::sum);
+			addHeld(heldByBase, e.getKey(), e.getValue());
 		}
 		if (liveQuantities != null)
 		{
 			for (Map.Entry<Integer, Integer> e : liveQuantities.entrySet())
 			{
-				heldByBase.merge(ItemVariationMapping.map(e.getKey()), e.getValue(), Integer::sum);
+				addHeld(heldByBase, e.getKey(), e.getValue());
 			}
 		}
 
