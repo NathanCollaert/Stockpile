@@ -353,50 +353,130 @@ public class PortfolioManager
 			}
 		}
 
+		// Attribute held items to purchases most-recent first, so a newer buy claims the held units
+		// before an older one. This resolves the ambiguity when the same items could satisfy either
+		// a set purchase or individual-piece purchases: whichever you bought more recently wins
+		// (consistent with the LIFO cost basis). A set claims un-unpacked set items plus complete
+		// sets assembled from loose pieces, then consumes those pieces so nothing double counts.
+		List<Map.Entry<Integer, TrackedItem>> claims = new ArrayList<>();
+		for (Map.Entry<Integer, TrackedItem> entry : data.getItems().entrySet())
+		{
+			if (entry.getValue().totalBought() > 0)
+			{
+				claims.add(entry);
+			}
+		}
+		claims.sort((a, b) ->
+		{
+			int cmp = Long.compare(newestBuy(b.getValue()), newestBuy(a.getValue()));
+			return cmp != 0 ? cmp : Integer.compare(a.getKey(), b.getKey());
+		});
+
 		List<PortfolioRow> rows = new ArrayList<>();
 		long total = 0;
-		for (Map.Entry<Integer, TrackedItem> entry : data.getItems().entrySet())
+		for (Map.Entry<Integer, TrackedItem> entry : claims)
 		{
 			int itemId = entry.getKey();
 			TrackedItem tracked = entry.getValue();
-			if (tracked.totalBought() <= 0)
+			if (isBlocked(config, itemManager.getItemComposition(itemId).getName()))
 			{
 				continue;
 			}
 
-			String name = itemManager.getItemComposition(itemId).getName();
-			if (isBlocked(config, name))
+			int quantity;
+			int[] pieces = ItemSets.piecesFor(itemId);
+			if (pieces != null)
 			{
-				continue;
+				int unopened = heldByBase.getOrDefault(ItemVariationMapping.map(itemId), 0);
+				int completeSets = Integer.MAX_VALUE;
+				for (int piece : pieces)
+				{
+					completeSets = Math.min(completeSets, heldByBase.getOrDefault(ItemVariationMapping.map(piece), 0));
+				}
+				int heldSets = unopened + (completeSets == Integer.MAX_VALUE ? 0 : completeSets);
+				quantity = Math.min(tracked.totalBought(), heldSets);
+				if (quantity <= 0)
+				{
+					continue;
+				}
+				int fromUnopened = Math.min(quantity, unopened);
+				consume(heldByBase, ItemVariationMapping.map(itemId), fromUnopened);
+				int fromPieces = quantity - fromUnopened;
+				for (int piece : pieces)
+				{
+					consume(heldByBase, ItemVariationMapping.map(piece), fromPieces);
+				}
+			}
+			else
+			{
+				int base = ItemVariationMapping.map(itemId);
+				// The list only shows what you currently hold (bank + inventory + gear); items you
+				// have none of drop off until they come back.
+				quantity = Math.min(tracked.totalBought(), heldByBase.getOrDefault(base, 0));
+				if (quantity <= 0)
+				{
+					continue;
+				}
+				consume(heldByBase, base, quantity);
 			}
 
-			int heldQty = heldByBase.getOrDefault(ItemVariationMapping.map(itemId), 0);
-			int quantity = Math.min(tracked.totalBought(), heldQty);
-			// The list only shows what you currently hold (bank + inventory + gear); items you
-			// have none of drop off until they come back.
-			if (quantity <= 0)
-			{
-				continue;
-			}
-
-			// Value the held units at the most recent purchases (LIFO).
-			LotValuation valuation = tracked.value(quantity);
-			long avg = valuation.getAveragePrice();
-			int rawCurrent = itemManager.getItemPrice(itemId);
-			long effectiveCurrent = config.applyGeTax() ? netAfterTax(rawCurrent) : rawCurrent;
-			long profitEach = effectiveCurrent - avg;
-			long profitTotal = profitEach * quantity;
-
-			List<Lot> lots = new ArrayList<>(tracked.getLots());
-			lots.sort(Comparator.comparingLong(Lot::getEpochMs).reversed());
-
-			total += profitTotal;
-			rows.add(new PortfolioRow(itemId, name, quantity, avg, rawCurrent, profitEach, profitTotal, valuation.getHeldSinceEpochMs(), lots));
+			PortfolioRow row = buildRow(itemManager, config, itemId, tracked, quantity);
+			rows.add(row);
+			total += row.getProfitTotal();
 		}
 
 		sort(rows, config.sortOrder());
 		lastTotalProfit = total;
 		return rows;
+	}
+
+	/** The most recent buy date across a tracked item's lots (0 if none). */
+	private static long newestBuy(TrackedItem tracked)
+	{
+		long newest = 0;
+		for (Lot lot : tracked.getLots())
+		{
+			if (lot.getEpochMs() > newest)
+			{
+				newest = lot.getEpochMs();
+			}
+		}
+		return newest;
+	}
+
+	/** Removes up to {@code amount} of a base from the held pool. */
+	private static void consume(Map<Integer, Integer> heldByBase, int base, int amount)
+	{
+		if (amount <= 0)
+		{
+			return;
+		}
+		int remaining = heldByBase.getOrDefault(base, 0) - amount;
+		if (remaining > 0)
+		{
+			heldByBase.put(base, remaining);
+		}
+		else
+		{
+			heldByBase.remove(base);
+		}
+	}
+
+	/** Builds one display row for {@code quantity} held units of a tracked item, valued LIFO. */
+	private PortfolioRow buildRow(ItemManager itemManager, BankStonksConfig config, int itemId, TrackedItem tracked, int quantity)
+	{
+		LotValuation valuation = tracked.value(quantity);
+		long avg = valuation.getAveragePrice();
+		int rawCurrent = itemManager.getItemPrice(itemId);
+		long effectiveCurrent = config.applyGeTax() ? netAfterTax(rawCurrent) : rawCurrent;
+		long profitEach = effectiveCurrent - avg;
+		long profitTotal = profitEach * quantity;
+
+		List<Lot> lots = new ArrayList<>(tracked.getLots());
+		lots.sort(Comparator.comparingLong(Lot::getEpochMs).reversed());
+
+		String name = itemManager.getItemComposition(itemId).getName();
+		return new PortfolioRow(itemId, name, quantity, avg, rawCurrent, profitEach, profitTotal, valuation.getHeldSinceEpochMs(), lots);
 	}
 
 	private static void sort(List<PortfolioRow> rows, SortOrder order)
